@@ -1,0 +1,256 @@
+InvoiceShelf Stop, Start, Fresh Reset Guide
+===========================================
+
+Project folder:
+C:\Users\18042\OneDrive\Documents\InvoiceShelf\InvoiceShelf
+
+App URL:
+http://127.0.0.1:8000/login
+
+Fresh login after database reset:
+Email: admin@invoiceshelf.com
+Password: invoiceshelf@123
+
+
+1. Open PowerShell
+------------------
+
+Open Windows PowerShell.
+
+Go to the project folder:
+
+cd "C:\Users\18042\OneDrive\Documents\InvoiceShelf\InvoiceShelf"
+
+What this does:
+It moves PowerShell into the InvoiceShelf application folder.
+
+
+2. Stop the running application
+-------------------------------
+
+First check which process is using port 8000:
+
+netstat -ano | findstr 8000
+
+What this does:
+It shows the process ID running the local website on port 8000.
+
+Example output:
+TCP    127.0.0.1:8000    0.0.0.0:0    LISTENING    12296
+
+Here, 12296 is the process ID.
+
+Stop that process:
+
+Stop-Process -Id 12296 -Force
+
+What this does:
+It stops the running InvoiceShelf local server.
+
+Important:
+Replace 12296 with the process ID shown on your machine.
+
+
+3. Backup the SQLite database before clearing it
+------------------------------------------------
+
+Copy-Item database\database.sqlite "database\database.backup-$(Get-Date -Format yyyyMMdd-HHmmss).sqlite"
+
+What this does:
+It creates a dated backup of your current database before deleting/resetting it.
+
+
+4. Clear the SQLite database
+----------------------------
+
+Remove-Item database\database.sqlite -Force
+
+What this does:
+It deletes the current SQLite database.
+
+Warning:
+This removes local customers, invoices, LR receipts, companies, users, and settings from this database.
+Do this only after backup if you need the old data.
+
+
+5. Create a fresh empty SQLite database file
+--------------------------------------------
+
+New-Item -ItemType File -Path database\database.sqlite -Force
+
+What this does:
+It creates a new empty SQLite database file.
+
+
+6. Clear Laravel cache
+----------------------
+
+& "C:\Users\18042\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.4_Microsoft.Winget.Source_8wekyb3d8bbwe\php.exe" artisan optimize:clear
+
+What this does:
+It clears Laravel config, route, view, and app cache.
+
+
+7. Recreate all database tables and seed default data
+-----------------------------------------------------
+
+& "C:\Users\18042\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.4_Microsoft.Winget.Source_8wekyb3d8bbwe\php.exe" artisan migrate:fresh --seed
+
+What this does:
+It creates all database tables again and adds the default admin user.
+
+Fresh login after this:
+Email: admin@invoiceshelf.com
+Password: invoiceshelf@123
+
+
+8. Mark setup complete and set company details
+----------------------------------------------
+
+Run this command as one full line:
+
+& "C:\Users\18042\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.4_Microsoft.Winget.Source_8wekyb3d8bbwe\php.exe" artisan tinker --execute="`$company=App\Models\Company::first(); `$user=App\Models\User::first(); `$company->update(['name'=>'SS Gujarat Logistics Services','slug'=>'ss-gujarat-logistics-services','vat_id'=>'NBKPS0084L','tax_id'=>'24NBKPS0084L1ZZ']); App\Models\Address::updateOrCreate(['company_id'=>`$company->id], ['user_id'=>`$user->id,'name'=>'SS Gujarat Logistics Services','address_street_1'=>'1953, Ground Floor, Mehsana Steel Compound, Umbergaon','city'=>'Valsad','state'=>'Gujarat','zip'=>'396171','phone'=>'6355071130']); App\Models\Setting::setSetting('profile_complete','COMPLETED');"
+
+What this does:
+It sets the fresh database company name, address, phone, PAN/GST values, and skips the installation wizard.
+
+
+9. Create public storage link
+-----------------------------
+
+& "C:\Users\18042\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.4_Microsoft.Winget.Source_8wekyb3d8bbwe\php.exe" artisan storage:link
+
+What this does:
+It links uploaded storage files to the public folder.
+
+If it says the link already exists, that is okay.
+
+
+10. Build the frontend
+----------------------
+
+& "C:\Program Files\nodejs\node.exe" node_modules\vite\bin\vite.js build
+
+What this does:
+It builds the Vue frontend files into public/build.
+
+If the browser shows a blank page, run this command again.
+
+
+11. Start the application correctly
+-----------------------------------
+
+Use this command:
+
+& "C:\Users\18042\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.4_Microsoft.Winget.Source_8wekyb3d8bbwe\php.exe" -S 127.0.0.1:8000 -t public server.php
+
+What this does:
+It starts the local PHP web server on:
+http://127.0.0.1:8000
+
+Important:
+The "-t public" part is required.
+Without "-t public", frontend files in public/build may return 404 and the browser can show a blank page.
+
+
+12. Open the application
+------------------------
+
+Open this in your browser:
+
+http://127.0.0.1:8000/login
+
+Login with:
+Email: admin@invoiceshelf.com
+Password: invoiceshelf@123
+
+
+13. If the browser shows blank page
+-----------------------------------
+
+Do these checks in order.
+
+Check if server is running:
+
+netstat -ano | findstr 8000
+
+Check if frontend asset is loading:
+
+curl.exe -I http://127.0.0.1:8000/build/assets/main-Cp94a4VZ.js
+
+If asset returns 404:
+Stop the server and restart using:
+
+& "C:\Users\18042\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.4_Microsoft.Winget.Source_8wekyb3d8bbwe\php.exe" -S 127.0.0.1:8000 -t public server.php
+
+If asset file name changed after rebuild:
+Open public\build\manifest.json and check the latest main JS file name.
+
+Then hard refresh browser:
+Ctrl + F5
+
+If still blank:
+Clear Laravel cache:
+
+& "C:\Users\18042\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.4_Microsoft.Winget.Source_8wekyb3d8bbwe\php.exe" artisan optimize:clear
+
+Rebuild frontend:
+
+& "C:\Program Files\nodejs\node.exe" node_modules\vite\bin\vite.js build
+
+Restart server again.
+
+
+14. If migration fails for PDF preview image
+--------------------------------------------
+
+The error may mention:
+public/assets/img/PDF/lr_receipt.png
+
+This was fixed in the repository by adding:
+resources/static/img/PDF/lr_receipt.png
+resources/static/img/PDF/ssgl_transport.png
+
+If you see this error on an older copy, pull latest code:
+
+& "C:\Program Files\Git\cmd\git.exe" pull
+
+Then run migrate again:
+
+& "C:\Users\18042\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.4_Microsoft.Winget.Source_8wekyb3d8bbwe\php.exe" artisan migrate:fresh --seed
+
+
+15. Stop the application when finished
+--------------------------------------
+
+Find the process:
+
+netstat -ano | findstr 8000
+
+Stop it:
+
+Stop-Process -Id PROCESS_ID -Force
+
+Example:
+
+Stop-Process -Id 12296 -Force
+
+What this does:
+It closes the local InvoiceShelf server.
+
+
+Quick daily start only
+----------------------
+
+Use this when you do not want to reset the database:
+
+cd "C:\Users\18042\OneDrive\Documents\InvoiceShelf\InvoiceShelf"
+
+& "C:\Users\18042\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.4_Microsoft.Winget.Source_8wekyb3d8bbwe\php.exe" artisan optimize:clear
+
+& "C:\Program Files\nodejs\node.exe" node_modules\vite\bin\vite.js build
+
+& "C:\Users\18042\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.4_Microsoft.Winget.Source_8wekyb3d8bbwe\php.exe" -S 127.0.0.1:8000 -t public server.php
+
+Open:
+http://127.0.0.1:8000/login

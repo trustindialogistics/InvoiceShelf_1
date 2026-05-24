@@ -21,7 +21,6 @@
         <link rel="stylesheet" href="/modules/styles/{{ $name }}">
     @endforeach
 
-    @vite('resources/scripts/main.js')
 </head>
 
 <body
@@ -37,7 +36,7 @@
         @endif
     @endforeach
 
-    <script type="module">
+    <script>
         @if(isset($customer_logo))
 
         window.customer_logo = "/storage/{{$customer_logo}}"
@@ -67,9 +66,9 @@
         @if(config('app.env') === 'demo')
             window.demo_mode = true
         @endif
-
-        window.InvoiceShelf.start()
     </script>
+
+    @vite('resources/scripts/main.js')
 </body>
 
 </html>

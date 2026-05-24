@@ -16,3 +16,4 @@ window.router = router
 window.VueRouter = VueRouter
 
 window.InvoiceShelf = new InvoiceShelf()
+window.InvoiceShelf.start()
