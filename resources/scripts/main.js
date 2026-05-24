@@ -6,6 +6,7 @@ import router from '@/scripts/router/index'
 import * as pinia from 'pinia'
 import * as Vue from 'vue'
 import * as Vuelidate from '@vuelidate/core'
+import { disableInspectShortcuts } from '@/scripts/helpers/disable-inspect'
 
 window.pinia = pinia
 window.Vuelidate = Vuelidate
@@ -14,6 +15,8 @@ import InvoiceShelf from './InvoiceShelf.js'
 window.Vue = Vue
 window.router = router
 window.VueRouter = VueRouter
+
+disableInspectShortcuts()
 
 window.InvoiceShelf = new InvoiceShelf()
 window.InvoiceShelf.start()
