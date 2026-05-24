@@ -33,7 +33,10 @@
       />
       <col style="width: 15%; min-width: 120px" />
     </colgroup>
-    <thead class="bg-white border border-gray-200 border-solid">
+    <thead
+      v-if="!isTransportEntryTemplate"
+      class="bg-white border border-gray-200 border-solid"
+    >
       <tr>
         <th
           class="
@@ -51,7 +54,7 @@
             <BaseContentPlaceholdersText :lines="1" class="w-16 h-5" />
           </BaseContentPlaceholders>
           <span v-else class="pl-7">
-            {{ $t('items.item', 2) }}
+            {{ isTransportEntryTemplate ? 'Consignment' : $t('items.item', 2) }}
           </span>
         </th>
         <th
@@ -70,7 +73,7 @@
             <BaseContentPlaceholdersText :lines="1" class="w-16 h-5" />
           </BaseContentPlaceholders>
           <span v-else>
-            {{ $t('invoices.item.quantity') }}
+            {{ isTransportEntryTemplate ? 'Pkg.' : $t('invoices.item.quantity') }}
           </span>
         </th>
         <th
@@ -89,7 +92,7 @@
             <BaseContentPlaceholdersText :lines="1" class="w-16 h-5" />
           </BaseContentPlaceholders>
           <span v-else>
-            {{ $t('invoices.item.price') }}
+            {{ isTransportEntryTemplate ? 'Rate' : $t('invoices.item.price') }}
           </span>
         </th>
         <th
@@ -156,6 +159,7 @@
   </table>
 
   <div
+    v-if="!isLrReceiptTemplate"
     class="
       flex
       items-center
@@ -222,6 +226,18 @@ const taxIncludedField = computed({
   set: async (value) => {
     props.store[props.storeProp].tax_included = value
   },
+})
+
+const isOfficeInvoiceTemplate = computed(() => {
+  return props.store[props.storeProp].template_name === 'office_invoice'
+})
+
+const isLrReceiptTemplate = computed(() => {
+  return props.store[props.storeProp].template_name === 'lr_receipt'
+})
+
+const isTransportEntryTemplate = computed(() => {
+  return isOfficeInvoiceTemplate.value || isLrReceiptTemplate.value
 })
 
 </script>

@@ -14,7 +14,6 @@ import { useCustomerStore } from './customer'
 import { useTaxTypeStore } from './tax-type'
 import { useCompanyStore } from './company'
 import { useItemStore } from './item'
-import { useUserStore } from './user'
 import { useNotesStore } from './note'
 
 export const useInvoiceStore = (useWindow = false) => {
@@ -488,8 +487,12 @@ export const useInvoiceStore = (useWindow = false) => {
         const itemStore = useItemStore()
         const taxTypeStore = useTaxTypeStore()
         const route = useRoute()
-        const userStore = useUserStore()
         const notesStore = useNotesStore()
+        const isLrReceipt =
+          route.name === 'lr-receipts.create' ||
+          route.name === 'lr-receipts.edit' ||
+          route.path.includes('/lr-receipts') ||
+          this.newInvoice.template_name === 'lr_receipt'
 
         this.isFetchingInitialSettings = true
 
@@ -504,9 +507,12 @@ export const useInvoiceStore = (useWindow = false) => {
         let editActions = []
 
         if (!isEdit) {
-          await notesStore.fetchNotes()
-          this.newInvoice.notes =
-            notesStore.getDefaultNoteForType('Invoice')?.notes
+          if (!isLrReceipt) {
+            await notesStore.fetchNotes()
+            this.newInvoice.notes =
+              notesStore.getDefaultNoteForType('Invoice')?.notes
+          }
+
           this.newInvoice.tax_per_item =
             companyStore.selectedCompanySettings.tax_per_item
           this.newInvoice.sales_tax_type =
@@ -537,32 +543,40 @@ export const useInvoiceStore = (useWindow = false) => {
           editActions = [this.fetchInvoice(route.params.id)]
         }
 
-        Promise.all([
-          itemStore.fetchItems({
-            filter: {},
-            orderByField: '',
-            orderBy: '',
-          }),
+        const loadActions = [
           this.resetSelectedNote(),
-          this.fetchInvoiceTemplates(),
           this.getNextNumber(),
-          taxTypeStore.fetchTaxTypes({ limit: 'all' }),
           ...editActions,
-        ])
+        ]
+
+        if (!isLrReceipt) {
+          loadActions.push(
+            itemStore.fetchItems({
+              filter: {},
+              orderByField: '',
+              orderBy: '',
+            }),
+            this.fetchInvoiceTemplates(),
+            taxTypeStore.fetchTaxTypes({ limit: 'all' })
+          )
+        }
+
+        return Promise.all(loadActions)
           .then(async ([res1, res2, res3, res4, res5, res6]) => {
             if (!isEdit) {
-              if (res4.data) {
-                this.newInvoice.invoice_number = res4.data.nextNumber
+              const nextNumberResponse = res2
+
+              if (nextNumberResponse?.data) {
+                this.newInvoice.invoice_number = nextNumberResponse.data.nextNumber
               }
 
-              if (res3.data) {
-                this.setTemplate(this.templates[0].name)
-                this.newInvoice.template_name = userStore.currentUserSettings
-                  .default_invoice_template
-                  ? userStore.currentUserSettings.default_invoice_template
-                  : this.newInvoice.template_name
+              if (isLrReceipt) {
+                this.setTemplate('lr_receipt')
+              } else {
+                this.setTemplate('office_invoice')
               }
             }
+
             if (isEdit) {
               this.addSalesTaxUs()
             }
@@ -570,8 +584,9 @@ export const useInvoiceStore = (useWindow = false) => {
             this.isFetchingInitialSettings = false
           })
           .catch((err) => {
+            this.isFetchingInitialSettings = false
             handleError(err)
-            reject(err)
+            throw err
           })
       },
     },

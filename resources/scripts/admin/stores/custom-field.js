@@ -6,6 +6,10 @@ import utilities from '@/scripts/helpers/utilities'
 import { util } from 'prettier'
 import { handleError } from '@/scripts/helpers/error-handling'
 
+function cloneCustomFields(fields) {
+  return JSON.parse(JSON.stringify(fields || []))
+}
+
 export const useCustomFieldStore = (useWindow = false) => {
   const defineStoreFunc = useWindow ? window.pinia.defineStore : defineStore
   const { global } = window.i18n
@@ -13,6 +17,8 @@ export const useCustomFieldStore = (useWindow = false) => {
   return defineStoreFunc('custom-field', {
     state: () => ({
       customFields: [],
+      customFieldsCache: {},
+      customFieldsRequests: {},
       isRequestOngoing: false,
 
       currentCustomField: {
@@ -38,6 +44,52 @@ export const useCustomFieldStore = (useWindow = false) => {
       },
 
       fetchCustomFields(params) {
+        const requestKey = JSON.stringify(params || {})
+
+        if (this.customFieldsCache[requestKey]) {
+          const cachedFields = cloneCustomFields(this.customFieldsCache[requestKey])
+          this.customFields = cachedFields
+
+          return Promise.resolve({
+            data: {
+              data: cachedFields,
+            },
+          })
+        }
+
+        if (this.customFieldsRequests[requestKey]) {
+          return this.customFieldsRequests[requestKey]
+        }
+
+        this.customFieldsRequests[requestKey] = new Promise((resolve, reject) => {
+          http
+            .get(`/api/v1/custom-fields`, { params })
+            .then((response) => {
+              const fields = response.data.data || []
+
+              this.customFieldsCache[requestKey] = cloneCustomFields(fields)
+              this.customFields = cloneCustomFields(fields)
+              resolve({
+                ...response,
+                data: {
+                  ...response.data,
+                  data: cloneCustomFields(fields),
+                },
+              })
+            })
+            .catch((err) => {
+              handleError(err)
+              reject(err)
+            })
+            .finally(() => {
+              delete this.customFieldsRequests[requestKey]
+            })
+        })
+
+        return this.customFieldsRequests[requestKey]
+      },
+
+      fetchCustomFieldsWithoutCache(params) {
         return new Promise((resolve, reject) => {
           http
             .get(`/api/v1/custom-fields`, { params })

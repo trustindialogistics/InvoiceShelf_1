@@ -117,7 +117,7 @@
                 </BaseInputGroup>
               </BaseInputGrid>
 
-              <BaseInputGroup :label="$t('customers.tax_id')">
+              <BaseInputGroup label="GSTIN No">
                 <BaseInput
                   v-model="customerStore.currentCustomer.tax_id"
                   type="text"

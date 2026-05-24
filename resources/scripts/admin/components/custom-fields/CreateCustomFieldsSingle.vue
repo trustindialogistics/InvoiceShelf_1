@@ -1,5 +1,6 @@
 <template>
   <BaseInputGroup
+    v-if="!isHiddenLrField"
     :label="field.label"
     :required="field.is_required ? true : false"
     :error="v$.value.$error && v$.value.$errors[0].$message"
@@ -15,7 +16,7 @@
 </template>
 
 <script setup>
-import { defineAsyncComponent, computed } from 'vue'
+import { defineAsyncComponent, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { helpers, requiredIf } from '@vuelidate/validators'
 import useVuelidate from '@vuelidate/core'
@@ -68,5 +69,26 @@ const getTypeComponent = computed(() => {
   }
 
   return false
+})
+
+const isHiddenLrField = computed(() => {
+  return (
+    props.store[props.storeProp]?.template_name === 'lr_receipt' &&
+    [
+      'Time',
+      'Consignor',
+      'Consignor Phone No',
+      'Consignor GST No',
+      'Consignee',
+      'Consignee Phone No',
+      'Consignee GST No',
+    ].includes(props.field.label)
+  )
+})
+
+onMounted(() => {
+  if (isHiddenLrField.value && props.field.label === 'Time') {
+    props.field.value = ''
+  }
 })
 </script>

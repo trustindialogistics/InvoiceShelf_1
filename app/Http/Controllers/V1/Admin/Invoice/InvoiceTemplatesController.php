@@ -23,7 +23,12 @@ class InvoiceTemplatesController extends Controller
     {
         $this->authorize('viewAny', Invoice::class);
 
-        $invoiceTemplates = PdfTemplateUtils::getFormattedTemplates('invoice');
+        $allowedTemplates = ['office_invoice', 'lr_receipt'];
+
+        $invoiceTemplates = array_values(array_filter(
+            PdfTemplateUtils::getFormattedTemplates('invoice'),
+            fn ($template) => in_array($template['name'], $allowedTemplates, true)
+        ));
 
         return response()->json([
             'invoiceTemplates' => $invoiceTemplates,

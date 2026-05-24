@@ -159,7 +159,7 @@
             </BaseInputGroup>
 
             <BaseInputGroup
-              :label="$t('customers.tax_id')"
+              label="GSTIN No"
               :content-loading="isFetchingInitialData"
             >
               <BaseInput

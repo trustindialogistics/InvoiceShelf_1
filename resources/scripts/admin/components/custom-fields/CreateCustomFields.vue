@@ -56,6 +56,10 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  templateName: {
+    type: String,
+    default: null,
+  },
 })
 
 getInitialCustomFields()
@@ -95,6 +99,7 @@ async function getInitialCustomFields() {
   const res = await customFieldStore.fetchCustomFields({
     type: props.type,
     limit: 'all',
+    template_name: props.templateName,
   })
 
   let data = res.data.data
@@ -113,6 +118,13 @@ watch(
   () => props.store[props.storeProp].fields,
   (val) => {
     mergeExistingValues()
+  }
+)
+
+watch(
+  () => props.templateName,
+  () => {
+    getInitialCustomFields()
   }
 )
 </script>

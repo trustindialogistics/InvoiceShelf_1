@@ -1,9 +1,9 @@
 <template>
-  <SelectTemplateModal />
-  <ItemModal />
-  <TaxTypeModal />
+  <SelectTemplateModal v-if="false" />
+  <ItemModal v-if="!isTransportEntryTemplate" />
+  <TaxTypeModal v-if="!isTransportEntryTemplate" />
   <SalesTax
-    v-if="salesTaxEnabled && (!isLoadingContent || route.query.customer)"
+    v-if="!isTransportEntryTemplate && salesTaxEnabled && (!isLoadingContent || route.query.customer)"
     :store="invoiceStore"
     :is-edit="isEdit"
     store-prop="newInvoice"
@@ -74,6 +74,18 @@
         :is-edit="isEdit"
       />
 
+      <div v-if="isLrReceipt" class="mb-8">
+        <InvoiceCustomFields
+          type="Invoice"
+          :is-edit="isEdit"
+          :is-loading="isLoadingContent"
+          :store="invoiceStore"
+          store-prop="newInvoice"
+          :template-name="invoiceStore.newInvoice.template_name"
+          :custom-field-scope="invoiceValidationScope"
+        />
+      </div>
+
       <BaseScrollPane>
         <!-- Invoice Items -->
         <InvoiceItems
@@ -96,6 +108,7 @@
           <div class="relative w-full lg:w-1/2 lg:mr-4">
             <!-- Invoice Custom Notes -->
             <NoteFields
+              v-if="!isTransportEntryTemplate"
               :store="invoiceStore"
               store-prop="newInvoice"
               :fields="invoiceNoteFieldList"
@@ -104,17 +117,20 @@
 
             <!-- Invoice Custom Fields -->
             <InvoiceCustomFields
+              v-if="!isLrReceipt"
               type="Invoice"
               :is-edit="isEdit"
               :is-loading="isLoadingContent"
               :store="invoiceStore"
               store-prop="newInvoice"
+              :template-name="invoiceStore.newInvoice.template_name"
               :custom-field-scope="invoiceValidationScope"
               class="mb-6"
             />
 
             <!-- Invoice Template Button-->
             <SelectTemplate
+              v-if="false"
               :store="invoiceStore"
               store-prop="newInvoice"
               component-name="InvoiceTemplate"
@@ -123,6 +139,7 @@
           </div>
 
           <InvoiceTotal
+            v-if="!isTransportEntryTemplate"
             :currency="invoiceStore.newInvoice.selectedCurrency"
             :is-loading="isLoadingContent"
             :store="invoiceStore"
@@ -218,6 +235,14 @@ const salesTaxEnabled = computed(() => {
   )
 })
 
+const isOfficeInvoiceTemplate = computed(() => {
+  return invoiceStore.newInvoice.template_name === 'office_invoice'
+})
+
+const isTransportEntryTemplate = computed(() => {
+  return isOfficeInvoiceTemplate.value || invoiceStore.newInvoice.template_name === 'lr_receipt'
+})
+
 let isEdit = computed(
   () => route.name === 'invoices.edit' || route.name === 'lr-receipts.edit'
 )
@@ -228,13 +253,6 @@ watch(
     isMarkAsDefault.value = false
   }
 )
-
-onMounted(() => {
-  // LR Receipts reuse invoices under the hood, but force a dedicated PDF layout.
-  if (isLrReceipt.value && !invoiceStore.newInvoice.template_name) {
-    invoiceStore.newInvoice.template_name = 'lr_receipt'
-  }
-})
 
 const rules = {
   invoice_date: {
@@ -270,6 +288,9 @@ const v$ = useVuelidate(
 customFieldStore.resetCustomFields()
 v$.value.$reset
 invoiceStore.resetCurrentInvoice()
+if (isLrReceipt.value) {
+  invoiceStore.newInvoice.template_name = 'lr_receipt'
+}
 invoiceStore.fetchInvoiceInitialSettings(isEdit.value)
 
 watch(
@@ -386,7 +407,7 @@ async function submitForm() {
 
     const response = await action(data)
 
-    router.push(`/admin/invoices/${response.data.data.id}/view`)
+    router.push(isLrReceipt.value ? `/admin/lr-receipts/${response.data.data.id}/view` : `/admin/invoices/${response.data.data.id}/view`)
   } catch (err) {
     console.error(err)
   }

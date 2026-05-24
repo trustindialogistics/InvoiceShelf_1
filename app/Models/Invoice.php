@@ -609,7 +609,13 @@ class Invoice extends Model implements HasMedia
             return view($templatePath);
         }
 
-        return PDF::loadView($templatePath);
+        $pdf = PDF::loadView($templatePath);
+
+        if (in_array($invoiceTemplate, ['ssgl_transport', 'office_invoice', 'lr_receipt'], true)) {
+            $pdf->setPaper('a4', 'landscape');
+        }
+
+        return $pdf;
     }
 
     public function getEmailAttachmentSetting()

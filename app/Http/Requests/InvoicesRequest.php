@@ -62,6 +62,7 @@ class InvoicesRequest extends FormRequest
             ],
             'template_name' => [
                 'required',
+                Rule::in(['office_invoice', 'lr_receipt']),
             ],
             'items' => [
                 'required',

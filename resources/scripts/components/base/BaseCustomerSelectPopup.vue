@@ -178,6 +178,7 @@
           'focus:ring-2 focus:ring-primary-400': !valid.$error,
         }"
         class="w-full outline-hidden rounded-md"
+        @click="ensureCustomersLoaded"
       >
         <div
           class="
@@ -211,7 +212,7 @@
 
           <div class="mt-1">
             <label class="text-lg font-medium text-gray-900">
-              {{ $t('customers.new_customer') }}
+              {{ label || $t('customers.new_customer') }}
               <span class="text-red-500"> * </span>
             </label>
 
@@ -355,7 +356,7 @@
                 outline-hidden
                 focus:bg-gray-300
               "
-              @click="openCustomerModal"
+              @click="openCustomerModal(close)"
             >
               <BaseIcon name="UserPlusIcon" class="text-primary-400" />
 
@@ -412,6 +413,10 @@ const props = defineProps({
   contentLoading: {
     type: Boolean,
     default: false,
+  },
+  label: {
+    type: String,
+    default: '',
   },
 })
 
@@ -475,6 +480,14 @@ async function fetchInitialCustomers() {
   })
 }
 
+async function ensureCustomersLoaded() {
+  if (customerStore.customers.length || isSearchingCustomer.value) {
+    return
+  }
+
+  await fetchInitialCustomers()
+}
+
 const debounceSearchCustomer = useDebounceFn(() => {
   isSearchingCustomer.value = true
 
@@ -492,7 +505,11 @@ async function searchCustomer() {
   isSearchingCustomer.value = false
 }
 
-function openCustomerModal() {
+function openCustomerModal(close) {
+  close?.()
+  globalStore.fetchCurrencies()
+  globalStore.fetchCountries()
+
   modalStore.openModal({
     title: t('customers.add_customer'),
     componentName: 'CustomerModal',
@@ -527,7 +544,4 @@ function selectNewCustomer(id, close) {
   search.value = null
 }
 
-globalStore.fetchCurrencies()
-globalStore.fetchCountries()
-fetchInitialCustomers()
 </script>

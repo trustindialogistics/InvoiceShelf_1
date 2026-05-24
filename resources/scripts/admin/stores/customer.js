@@ -15,6 +15,7 @@ export const useCustomerStore = (useWindow = false) => {
   return defineStoreFunc('customer', {
     state: () => ({
       customers: [],
+      customerListRequests: {},
       totalCustomers: 0,
       selectAllField: false,
       selectedCustomers: [],
@@ -73,7 +74,13 @@ export const useCustomerStore = (useWindow = false) => {
       },
 
       fetchCustomers(params) {
-        return new Promise((resolve, reject) => {
+        const requestKey = JSON.stringify(params || {})
+
+        if (this.customerListRequests[requestKey]) {
+          return this.customerListRequests[requestKey]
+        }
+
+        this.customerListRequests[requestKey] = new Promise((resolve, reject) => {
           http
             .get(`/api/v1/customers`, { params })
             .then((response) => {
@@ -85,7 +92,12 @@ export const useCustomerStore = (useWindow = false) => {
               handleError(err)
               reject(err)
             })
+            .finally(() => {
+              delete this.customerListRequests[requestKey]
+            })
         })
+
+        return this.customerListRequests[requestKey]
       },
 
       fetchViewCustomer(params) {

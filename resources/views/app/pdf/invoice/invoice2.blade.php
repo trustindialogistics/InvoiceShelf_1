@@ -88,6 +88,17 @@
             text-align: right;
         }
 
+        .invoice-details-container .attribute-label,
+        .invoice-details-container .attribute-value {
+            font-size: 10px;
+            line-height: 15px;
+            color: white;
+        }
+
+        .invoice-details-container .attribute-value {
+            text-align: right;
+        }
+
         .invoice-details-container h3 {
             margin-bottom: 1px;
             margin-top: 0;
@@ -402,6 +413,9 @@
                     <h1>@lang('pdf_invoice_label')</h1>
                     <h4>{{ $invoice->invoice_number }}</h4>
                     <h4>{{ $invoice->formattedInvoiceDate }}</h4>
+                    <table width="100%">
+                        @include('app.pdf.invoice.partials.custom-fields')
+                    </table>
                 </td>
             </tr>
         </table>

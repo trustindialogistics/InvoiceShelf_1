@@ -13,7 +13,7 @@
           <col style="width: 15%; min-width: 120px" />
         </colgroup>
         <tbody>
-          <tr>
+          <tr v-if="!isTransportEntryTemplate">
             <td class="px-5 py-4 text-left align-top">
               <div class="flex justify-start">
                 <div
@@ -21,7 +21,18 @@
                 >
                   <DragIcon />
                 </div>
+                <div v-if="isTransportEntryTemplate" class="w-full">
+                  <BaseInput
+                    v-model="manualItemName"
+                    :invalid="v$.name.$error"
+                    :content-loading="loading"
+                    small
+                    placeholder="Manual consignment row"
+                    @input="v$.name.$touch()"
+                  />
+                </div>
                 <BaseItemSelect
+                  v-else
                   type="Invoice"
                   :item="itemData"
                   :invalid="v$.name.$error"
@@ -137,7 +148,7 @@
               </div>
             </td>
           </tr>
-          <tr v-if="store[storeProp].tax_per_item === 'YES'">
+          <tr v-if="!isTransportEntryTemplate && store[storeProp].tax_per_item === 'YES'">
             <td class="px-5 py-4 text-left align-top" />
             <td colspan="4" class="px-5 py-4 text-left align-top">
               <BaseContentPlaceholders v-if="loading">
@@ -169,9 +180,46 @@
             </td>
           </tr>
           <tr v-if="itemCustomFields.length > 0">
-            <td class="px-5 pb-4 text-left align-top" />
-            <td colspan="4" class="px-5 pb-4 text-left align-top">
-              <BaseInputGrid layout="three-column">
+            <td
+              v-if="!isTransportEntryTemplate"
+              class="px-5 pb-4 text-left align-top"
+            />
+            <td
+              :colspan="isTransportEntryTemplate ? 5 : 4"
+              class="px-5 pb-4 text-left align-top"
+            >
+              <div
+                v-if="isTransportEntryTemplate"
+                class="office-consignment-grid"
+              >
+                <CustomFieldSingle
+                  v-for="(field, fieldIndex) in itemCustomFields"
+                  :key="field.id"
+                  :custom-field-scope="`${itemValidationScope}.items.${index}.customFields`"
+                  :store="store"
+                  :store-prop="storeProp"
+                  :index="fieldIndex"
+                  :field="field"
+                  :class="{
+                    'office-invoice-field': isTransportEntryTemplate,
+                  }"
+                />
+                <BaseInputGroup :label="isLrReceiptTemplate ? 'Net Amount' : 'Amount'">
+                  <BaseFormatMoney
+                    :amount="transportAmount"
+                    :currency="selectedCurrency"
+                  />
+                </BaseInputGroup>
+                <div class="office-row-actions">
+                  <BaseIcon
+                    v-if="showRemoveButton"
+                    class="h-5 text-gray-700 cursor-pointer"
+                    name="TrashIcon"
+                    @click="store.removeItem(index)"
+                  />
+                </div>
+              </div>
+              <BaseInputGrid v-else layout="three-column">
                 <CustomFieldSingle
                   v-for="(field, fieldIndex) in itemCustomFields"
                   :key="field.id"
@@ -258,6 +306,16 @@ const companyStore = useCompanyStore()
 const itemStore = useItemStore()
 const customFieldStore = useCustomFieldStore()
 const itemCustomFields = computed(() => props.itemData.customFields || [])
+const isOfficeInvoiceTemplate = computed(
+  () => props.store[props.storeProp].template_name === 'office_invoice'
+)
+const isLrReceiptTemplate = computed(
+  () => props.store[props.storeProp].template_name === 'lr_receipt'
+)
+const isTransportEntryTemplate = computed(
+  () => isOfficeInvoiceTemplate.value || isLrReceiptTemplate.value
+)
+const lastMirroredPkg = ref(null)
 
 let route = useRoute()
 const { t } = useI18n()
@@ -268,6 +326,15 @@ const quantity = computed({
   },
   set: (newValue) => {
     updateItemAttribute('quantity', parseFloat(newValue))
+  },
+})
+
+const manualItemName = computed({
+  get: () => {
+    return props.itemData.name
+  },
+  set: (newValue) => {
+    updateItemAttribute('name', newValue)
   },
 })
 
@@ -300,6 +367,33 @@ const total = computed(() => {
   return subtotal.value - props.itemData.discount_val
 })
 
+const officeAmount = computed(() => {
+  return Math.round(
+    (getOfficeFieldNumber('Rate') +
+      getOfficeFieldNumber('Other Charge') +
+      getOfficeFieldNumber('LR Charge') +
+      getOfficeFieldNumber('DD Charge')) *
+      100
+  )
+})
+
+const lrReceiptAmount = computed(() => {
+  return Math.round(
+    (getOfficeFieldNumber('Basic Freight') +
+      getOfficeFieldNumber('Local Collection') +
+      getOfficeFieldNumber('Door Delivery') +
+      getOfficeFieldNumber('Hamali') +
+      getOfficeFieldNumber('Docket Charge') +
+      getOfficeFieldNumber('Other Charge') +
+      getOfficeFieldNumber('FOV')) *
+      100
+  )
+})
+
+const transportAmount = computed(() => {
+  return isLrReceiptTemplate.value ? lrReceiptAmount.value : officeAmount.value
+})
+
 const selectedCurrency = computed(() => {
   if (props.currency) {
     return props.currency
@@ -309,6 +403,10 @@ const selectedCurrency = computed(() => {
 })
 
 const showRemoveButton = computed(() => {
+  if (isLrReceiptTemplate.value) {
+    return false
+  }
+
   if (props.store[props.storeProp].items.length == 1) {
     return false
   }
@@ -369,13 +467,34 @@ const v$ = useVuelidate(
   { $scope: props.itemValidationScope }
 )
 
-onMounted(loadItemCustomFields)
+onMounted(() => {
+  ensureTransportItemName()
+  loadItemCustomFields()
+})
 
 watch(
   () => props.itemData.fields,
   () => {
     loadItemCustomFields()
   }
+)
+
+watch(
+  () => props.store[props.storeProp].template_name,
+  () => {
+    ensureTransportItemName()
+    updateItemAttribute('customFields', [])
+    loadItemCustomFields()
+  }
+)
+
+watch(
+  () => itemCustomFields.value.map((field) => field.value),
+  () => {
+    syncChargedWeightFromPkg()
+    syncTransportAmountToStore()
+  },
+  { deep: true }
 )
 
 //
@@ -424,6 +543,81 @@ function setDiscount() {
 
 function searchVal(val) {
   updateItemAttribute('name', val)
+}
+
+function ensureTransportItemName() {
+  if (!isTransportEntryTemplate.value || props.itemData.name) {
+    return
+  }
+
+  updateItemAttribute(
+    'name',
+    isLrReceiptTemplate.value ? `LR Receipt ${props.index + 1}` : `Consignment ${props.index + 1}`
+  )
+}
+
+function getOfficeFieldNumber(label) {
+  const field = getOfficeField(label)
+  const value = field?.value
+
+  if (value === null || value === undefined || value === '') {
+    return 0
+  }
+
+  const numericValue = parseFloat(String(value).replace(/[^0-9.-]/g, ''))
+
+  return Number.isNaN(numericValue) ? 0 : numericValue
+}
+
+function getOfficeField(label) {
+  return itemCustomFields.value.find((_field) => _field.label === label)
+}
+
+function syncChargedWeightFromPkg() {
+  if (!isOfficeInvoiceTemplate.value) {
+    return
+  }
+
+  const pkgField = getOfficeField('Pkg')
+  const chargedWeightField = getOfficeField('Charged Weight Kgs')
+
+  if (!pkgField || !chargedWeightField) {
+    return
+  }
+
+  const pkgValue = pkgField.value
+  const chargedWeightValue = chargedWeightField.value
+
+  if (
+    chargedWeightValue !== '' &&
+    chargedWeightValue !== null &&
+    chargedWeightValue !== undefined &&
+    chargedWeightValue !== lastMirroredPkg.value
+  ) {
+    return
+  }
+
+  chargedWeightField.value = pkgValue
+  lastMirroredPkg.value = pkgValue
+}
+
+function syncTransportAmountToStore() {
+  if (!isTransportEntryTemplate.value) {
+    return
+  }
+
+  const amount = transportAmount.value
+
+  props.store.$patch((state) => {
+    state[props.storeProp].items[props.index].quantity = 1
+    state[props.storeProp].items[props.index].price = amount
+    state[props.storeProp].items[props.index].discount = 0
+    state[props.storeProp].items[props.index].discount_val = 0
+    state[props.storeProp].items[props.index].tax = 0
+    state[props.storeProp].items[props.index].total = amount
+  })
+
+  syncItemToStore()
 }
 
 function onSelectItem(itm) {
@@ -518,6 +712,7 @@ async function loadItemCustomFields() {
   const response = await customFieldStore.fetchCustomFields({
     type: 'Item',
     limit: 'all',
+    template_name: props.store[props.storeProp].template_name,
   })
 
   let fields = response.data.data.map((field) => ({
@@ -553,5 +748,34 @@ async function loadItemCustomFields() {
     'customFields',
     fields.sort((firstField, secondField) => firstField.order - secondField.order)
   )
+
+  syncChargedWeightFromPkg()
+  syncTransportAmountToStore()
 }
 </script>
+
+<style scoped>
+.office-consignment-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(6, minmax(120px, 1fr));
+}
+
+.office-row-actions {
+  align-items: end;
+  display: flex;
+  min-height: 48px;
+}
+
+.office-invoice-field :deep(label) {
+  font-size: 11px;
+  line-height: 14px;
+  margin-bottom: 3px;
+}
+
+.office-invoice-field :deep(input),
+.office-invoice-field :deep(textarea),
+.office-invoice-field :deep(select) {
+  min-height: 30px;
+}
+</style>
