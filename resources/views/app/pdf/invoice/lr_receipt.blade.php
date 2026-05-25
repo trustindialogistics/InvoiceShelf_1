@@ -145,6 +145,10 @@
             vertical-align: middle;
         }
 
+        .top-detail-table .tax-line {
+            height: 34px;
+        }
+
         .party-table td {
             border-bottom: 0;
         }
@@ -239,7 +243,7 @@
         .declaration {
             font-size: 7.5px;
             line-height: 9px;
-            height: 54px;
+            height: 58px;
         }
 
         .agreement {
@@ -257,8 +261,10 @@
         .gst-payable {
             font-size: 10px;
             font-weight: bold;
+            height: 70px;
             line-height: 12px;
             text-align: center;
+            vertical-align: middle;
         }
 
         .for-company {
@@ -483,8 +489,8 @@
                             <td width="36%" class="owner-risk">OWNER'S RISK</td>
                             <td><span class="label">To :</span> {{ $invoiceField(['to']) }}</td>
                         </tr>
-                        <tr><td><span class="label">Truck No.:</span> {{ $invoiceField(['truck_no']) }}</td></tr>
-                        <tr><td class="tax-line">PAN No.: {{ $panNo }}<br>GSTIN : {{ $gstin }}</td></tr>
+                        <tr><td colspan="2"><span class="label">Truck No.:</span> {{ $invoiceField(['truck_no']) }}</td></tr>
+                        <tr><td colspan="2" class="tax-line"><span class="label">PAN No.:</span> {{ $panNo }}<br><span class="label">GSTIN :</span> {{ $gstin }}</td></tr>
                     </table>
                 </td>
             </tr>
@@ -511,14 +517,18 @@
                             </td>
                         </tr>
                         <tr>
-                            <td><span class="label">Delivery At.:</span> {{ $itemField(['delivery_at']) }}</td>
+                            <td rowspan="2"><span class="label">Delivery At.:</span><br>{{ $itemField(['delivery_at']) }}</td>
                             <td><span class="label">Invoice No. :</span><br>{{ $itemField(['invoice_no']) }}</td>
                             <td><span class="label">Goods Value</span><br>{{ $itemField(['goods_value']) }}</td>
                         </tr>
                         <tr>
-                            <td><span class="label">E-way Bill No.:</span> {{ $itemField(['e_way_bill_no']) }}</td>
                             <td><span class="label">POD Required.</span></td>
                             <td>{{ $itemField(['pod_required']) }}</td>
+                        </tr>
+                        <tr>
+                            <td><span class="label">E-way Bill No.:</span><br>{{ $itemField(['e_way_bill_no']) }}</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
                         </tr>
                     </table>
                 </td>
@@ -578,19 +588,25 @@
 
         <table>
             <tr>
-                <td width="28%" style="padding: 0;">
-                    <div class="declaration">
-                        <span class="label">DECLARATION :</span> We Have Not Taken Gst Credit As Per The Provisions<br>
-                        Of Convat Credit Rule 2004 Of Only Paid On Inputs Or Capital Goods<br>
-                        Used For Providing Taxable's Service To You And Have Also Availed<br>
-                        The Benefits Of Notification No. 11 &amp; 13/2017 Dated 28th June 2017
-                    </div>
-                    <div class="agreement">It is taken in to consideration that agrees with<br>all the terms and condition overleaf</div>
-                </td>
-                <td width="33%" class="consignee-sign">
-                    <span class="label">Rubber Stamp and Signature of Consignee</span><br><br><br>
-                    <span class="label">Phone / Mobile</span><br>
-                    {{ $consigneePhone }}
+                <td width="61%" style="padding: 0;">
+                    <table>
+                        <tr>
+                            <td width="45%" style="padding: 0;">
+                                <div class="declaration">
+                                    <span class="label">DECLARATION :</span> We Have Not Taken Gst Credit As Per The Provisions
+                                    Of Convat Credit Rule 2004 Of Only Paid On Inputs Or Capital Goods
+                                    Used For Providing Taxable's Service To You And Have Also Availed
+                                    The Benefits Of Notification No. 11 &amp; 13/2017 Dated 28th June 2017
+                                </div>
+                                <div class="agreement">It is taken in to consideration that agrees with<br>all the terms and condition overleaf</div>
+                            </td>
+                            <td width="55%" class="consignee-sign">
+                                <span class="label">Rubber Stamp and Signature of Consignee</span><br><br><br>
+                                <span class="label">Phone / Mobile</span><br>
+                                {{ $consigneePhone }}
+                            </td>
+                        </tr>
+                    </table>
                 </td>
                 <td width="39%" style="padding: 0;">
                     <table>

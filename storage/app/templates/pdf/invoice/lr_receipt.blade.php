@@ -161,6 +161,12 @@
             padding: 4pt 5pt;
         }
 
+        .inner-cell {
+            border: 1px solid #111827;
+            vertical-align: top;
+            padding: 3pt 4pt;
+        }
+
         .label {
             font-size: 8px;
             font-weight: 700;
@@ -243,6 +249,36 @@
             text-align: center;
             vertical-align: middle;
         }
+
+        .declaration-cell {
+            font-size: 6.7px;
+            line-height: 8px;
+            height: 64pt;
+        }
+
+        .declaration-note {
+            font-size: 6.7px;
+            font-weight: 800;
+            line-height: 8px;
+            margin-top: 5pt;
+            text-align: center;
+        }
+
+        .signature-cell {
+            height: 64pt;
+        }
+
+        .gst-footer-cell {
+            font-size: 8.5px;
+            height: 64pt;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .gst-footer-company {
+            font-weight: 800;
+            margin-top: 9pt;
+        }
     </style>
 </head>
 
@@ -301,8 +337,8 @@
                 <table>
                     <tr>
                         <td class="cell" style="width: 45%;">
-                            <div class="label">Date :</div>
-                            <div class="value">{{ $invoice->formattedInvoiceDate }}</div>
+                            <span class="label">Date :</span>
+                            <span class="value">{{ $invoice->formattedInvoiceDate }}</span>
                         </td>
                         <td class="cell" style="width: 55%;">
                             <div class="label">Docket No. :</div>
@@ -311,12 +347,12 @@
                     </tr>
                     <tr>
                         <td class="cell">
-                            <div class="label">Time :</div>
-                            <div class="value">{{ $inv('time') }}</div>
+                            <span class="label">Time :</span>
+                            <span class="value">{{ $inv('time') }}</span>
                         </td>
                         <td class="cell">
-                            <div class="label">From :</div>
-                            <div class="value">{{ $inv('from') }}</div>
+                            <span class="label">From :</span>
+                            <span class="value">{{ $inv('from') }}</span>
                         </td>
                     </tr>
                     <tr>
@@ -324,24 +360,20 @@
                             <div class="label">OWNER'S RISK</div>
                         </td>
                         <td class="cell">
-                            <div class="label">To :</div>
-                            <div class="value">{{ $inv('to') }}</div>
+                            <span class="label">To :</span>
+                            <span class="value">{{ $inv('to') }}</span>
                         </td>
                     </tr>
                     <tr>
                         <td class="cell" colspan="2">
-                            <div class="label">Truck No. :</div>
-                            <div class="value">{{ $inv('truck_no', $firstItem ? $itemField($firstItem, 'vehicle_no') : '') }}</div>
+                            <span class="label">Truck No. :</span>
+                            <span class="value">{{ $inv('truck_no', $firstItem ? $itemField($firstItem, 'vehicle_no') : '') }}</span>
                         </td>
                     </tr>
                     <tr>
                         <td class="cell" colspan="2">
-                            <div class="label">PAN No. :</div>
-                            <div class="value">{{ $inv('company_pan', $companyPan) }}</div>
-                            <div style="margin-top: 4pt;">
-                                <span class="label">GSTIN :</span>
-                                <span class="value">{{ $inv('company_gstin', $companyGstin) }}</span>
-                            </div>
+                            <div><span class="label">PAN No. :</span> <span class="value">{{ $inv('company_pan', $companyPan) }}</span></div>
+                            <div style="margin-top: 3pt;"><span class="label">GSTIN :</span> <span class="value">{{ $inv('company_gstin', $companyGstin) }}</span></div>
                         </td>
                     </tr>
                 </table>
@@ -378,7 +410,7 @@
                         </td>
                     </tr>
                     <tr>
-                        <td class="cell">
+                        <td class="cell" rowspan="2">
                             <div class="label">Delivery At. :</div>
                             <div class="value">{{ $itm('delivery_at') }}</div>
                         </td>
@@ -391,10 +423,6 @@
                     </tr>
                     <tr>
                         <td class="cell">
-                            <div class="label">E-way Bill No. :</div>
-                            <div class="value">{{ $itm('e_way_bill_no') }}</div>
-                        </td>
-                        <td class="cell">
                             <div class="label">Invoice No. :</div>
                         </td>
                         <td class="cell">
@@ -402,7 +430,10 @@
                         </td>
                     </tr>
                     <tr>
-                        <td class="cell">&nbsp;</td>
+                        <td class="cell">
+                            <div class="label">E-way Bill No. :</div>
+                            <div class="value">{{ $itm('e_way_bill_no') }}</div>
+                        </td>
                         <td class="cell">
                             <div class="label">Goods Value</div>
                         </td>
@@ -468,20 +499,26 @@
         </tr>
 
         <tr>
-            <td class="cell" style="width: 28%; font-size: 7px; line-height: 8.5px;">
-                <div><span class="label">DECLARATION :</span> We Have Not Taken Gst Credit As Per The Provisions Of Convat Credit Rule 2004 Of Only Paid On Inputs Or Capital Goods Used For Providing Taxable's Service To You And Have Also Availed The Benefits Of Notification No. 11 &amp; 13/2017 Dated 28th June 2017</div>
-                <div style="margin-top: 5pt; text-align: center; font-weight: 700;">It is taken in to consideration that agrees with all the terms and condition overleaf</div>
+            <td class="cell" style="width: 62%; padding: 0;">
+                <table>
+                    <tr>
+                        <td class="inner-cell declaration-cell" style="width: 44%;">
+                            <div><span class="label">DECLARATION :</span> We Have Not Taken Gst Credit As Per The Provisions Of Convat Credit Rule 2004 Of Only Paid On Inputs Or Capital Goods Used For Providing Taxable's Service To You And Have Also Availed The Benefits Of Notification No. 11 &amp; 13/2017 Dated 28th June 2017</div>
+                            <div class="declaration-note">It is taken in to consideration that agrees with all the terms and condition overleaf</div>
+                        </td>
+                        <td class="inner-cell signature-cell" style="width: 56%;">
+                            <div class="label">Rubber Stamp and Signature of Consignee</div>
+                            <div style="height: 43pt;"></div>
+                            <div class="label">Phone / Mobile</div>
+                            <div class="value">{{ $consigneePhone }}</div>
+                        </td>
+                    </tr>
+                </table>
             </td>
-            <td class="cell" style="width: 34%;">
-                <div class="label">Rubber Stamp and Signature of Consignee</div>
-                <div style="height: 50pt;"></div>
-                <div class="label">Phone / Mobile</div>
-                <div class="value">{{ $consigneePhone }}</div>
-            </td>
-            <td class="cell center" style="width: 38%;">
+            <td class="cell gst-footer-cell" style="width: 38%;">
                 <div class="label">GST Tax Payable By</div>
-                <div class="value">Consignor / Consignee</div>
-                <div style="margin-top: 10pt; font-weight: 800;">For {{ $companyName }}</div>
+                <div class="value">{{ $inv('gst_tax_payable_by', 'Consignor / Consignee') }}</div>
+                <div class="gst-footer-company">For {{ $companyName }}</div>
             </td>
         </tr>
     </table>
