@@ -42,6 +42,9 @@ const searchData = reactive({
 
 const pageTitle = computed(() => invoiceData.value.invoice_number)
 const isLrReceiptRoute = computed(() => route.name?.startsWith('lr-receipts'))
+const isLrReceiptView = computed(() =>
+  isLrReceiptRoute.value || invoiceData.value?.template_name === 'lr_receipt'
+)
 const invoiceResourcePath = computed(() =>
   isLrReceiptRoute.value ? '/admin/lr-receipts' : '/admin/invoices'
 )
@@ -66,7 +69,7 @@ const getOrderName = computed(() => {
 const shareableLink = computed(() => {
   const baseUrl = `/invoices/pdf/${invoiceData.value.unique_hash}`
 
-  if (isLrReceiptRoute.value && selectedLrCopy.value) {
+  if (isLrReceiptView.value && selectedLrCopy.value) {
     return `${baseUrl}?copy=${selectedLrCopy.value}`
   }
 
