@@ -28,6 +28,7 @@ const route = useRoute()
 const isMarkAsSent = ref(false)
 const isLoading = ref(false)
 const selectedLrCopy = ref(null)
+const selectedLrCopyVersion = ref(0)
 
 const invoiceList = ref(null)
 const currentPageNumber = ref(1)
@@ -70,7 +71,7 @@ const shareableLink = computed(() => {
   const baseUrl = `/invoices/pdf/${invoiceData.value.unique_hash}`
 
   if (isLrReceiptView.value && selectedLrCopy.value) {
-    return `${baseUrl}?copy=${selectedLrCopy.value}`
+    return `${baseUrl}?copy=${selectedLrCopy.value}&v=${selectedLrCopyVersion.value}`
   }
 
   return baseUrl
@@ -218,6 +219,7 @@ async function loadInvoice() {
 
 function showLrCopy(copyType) {
   selectedLrCopy.value = copyType
+  selectedLrCopyVersion.value += 1
 }
 
 async function onSearched() {
@@ -529,6 +531,7 @@ onSearched = debounce(onSearched, 500)
       style="height: 75vh"
     >
       <iframe
+        :key="shareableLink"
         :src="`${shareableLink}`"
         class="
           flex-1

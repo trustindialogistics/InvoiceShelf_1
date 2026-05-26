@@ -130,6 +130,16 @@
         $firstItem = $invoice->items->first();
         $totalPackages = (string) $invoice->items->sum(fn ($i) => (int) $i->quantity);
         $docketNumber = preg_replace('/^INV/i', 'DOC', $invoice->invoice_number);
+        $descriptionOfGoods = trim($itm('description_of_goods', $firstItem?->name ?? ''));
+        $noOfArticles = trim($itm('no_of_articles', $totalPackages));
+
+        if (preg_match('/^LR Receipt\s+\d+$/i', $descriptionOfGoods)) {
+            $descriptionOfGoods = '';
+        }
+
+        if ($noOfArticles === '1' && $descriptionOfGoods === '') {
+            $noOfArticles = '';
+        }
 
         // Shared view variables come from Invoice::getPDFData(). Guard against null/false.
         $company_address = $company_address ?: '';
@@ -292,13 +302,31 @@
         .gst-footer-cell {
             font-size: 8.5px;
             height: 64pt;
+            padding: 0;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .gst-footer-table {
+            height: 64pt;
+        }
+
+        .gst-footer-table td {
+            border: 0;
             text-align: center;
             vertical-align: middle;
         }
 
+        .gst-footer-tax {
+            height: 26pt;
+        }
+
+        .gst-footer-company-row {
+            border-top: 1px solid #111827 !important;
+        }
+
         .gst-footer-company {
             font-weight: 800;
-            margin-top: 9pt;
         }
     </style>
 </head>
@@ -409,11 +437,11 @@
                     <tr>
                         <td class="cell" style="width: 50%;">
                             <div class="label">Description of Goods</div>
-                            <div class="value">{{ $itm('description_of_goods', $firstItem?->name ?? '') }}</div>
+                            <div class="value">{{ $descriptionOfGoods }}</div>
                         </td>
                         <td class="cell" style="width: 25%;">
                             <div class="label">No. of Articles</div>
-                            <div class="value center">{{ $itm('no_of_articles', $totalPackages) }}</div>
+                            <div class="value center">{{ $noOfArticles }}</div>
                         </td>
                         <td class="cell" style="width: 25%;">
                             <div class="label">Packing</div>
@@ -542,9 +570,19 @@
                 </table>
             </td>
             <td class="cell gst-footer-cell" style="width: 38%;">
-                <div class="label">GST Tax Payable By</div>
-                <div class="value">{{ $inv('gst_tax_payable_by', 'Consignor / Consignee') }}</div>
-                <div class="gst-footer-company">For {{ $companyName }}</div>
+                <table class="gst-footer-table">
+                    <tr>
+                        <td class="gst-footer-tax">
+                            <div class="label">GST Tax Payable By</div>
+                            <div class="value">{{ $inv('gst_tax_payable_by', 'Consignor / Consignee') }}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="gst-footer-company-row">
+                            <div class="gst-footer-company">For {{ $companyName }}</div>
+                        </td>
+                    </tr>
+                </table>
             </td>
         </tr>
     </table>
